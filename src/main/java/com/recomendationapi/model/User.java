@@ -3,6 +3,7 @@ package com.recomendationapi.model;
 import com.recomendationapi.form.DefaultForm;
 import com.recomendationapi.form.UserForm;
 import lombok.*;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -32,6 +33,7 @@ public class User extends Entity {
         if (recommendations == null) {
             recommendations = new ArrayList<>();
         }
+        recommendations.removeIf(r -> StringUtils.equals(recommendation.getUserId(), r.getUserId()));
         recommendations.add(recommendation);
     }
 

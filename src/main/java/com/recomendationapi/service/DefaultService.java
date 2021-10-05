@@ -21,6 +21,11 @@ public abstract class DefaultService<T extends Entity, R extends ReactiveMongoRe
         this.repository = repository;
     }
 
+    public Mono<Long> count() {
+        log.info("count");
+        return repository.count();
+    }
+
     public Flux<T> getAll() {
         log.info("getAll");
         return repository.findAll();

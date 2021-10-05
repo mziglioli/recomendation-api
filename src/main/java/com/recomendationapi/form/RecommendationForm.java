@@ -22,7 +22,6 @@ public class RecommendationForm extends DefaultForm {
     @NotEmpty(message = "validator.invalid.providerId")
     private String providerId;
 
-    @NotEmpty(message = "validator.invalid.score")
     @Min(value = 0, message = "validator.invalid.score")
     @Max(value = 5, message = "validator.invalid.score")
     private int score;

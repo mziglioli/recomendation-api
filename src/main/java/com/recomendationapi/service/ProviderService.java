@@ -1,6 +1,7 @@
 package com.recomendationapi.service;
 
 import com.recomendationapi.form.ProviderForm;
+import com.recomendationapi.form.RecommendationFindForm;
 import com.recomendationapi.model.Provider;
 import com.recomendationapi.model.User;
 import com.recomendationapi.repository.ProviderRepository;
@@ -9,7 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.Comparator;
 
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
@@ -34,22 +38,8 @@ public class ProviderService extends DefaultService<Provider, ProviderRepository
         return repository.findProviderByNameIsLike(name).defaultIfEmpty(new Provider());
     }
 
-    public Mono<DefaultResponse> create(ProviderForm form) {
-        log.info("create:provider: start => " + form.toString());
-        Provider entity = form.convertToEntity();
-        return Mono.zip(userService.getUserByMediaId(form.getUserId()), getProvider(entity.getName()))
-            .map(objects -> {
-                User user = objects.getT1();
-                Provider provider = objects.getT2();
-                log.info("create:provider: pending =" + user.toString() + "; " + provider.toString());
-                if (isNotEmpty(user.getId())) {
-                   return validateAndSave(entity, provider);
-                } else {
-                    return DefaultResponse.builder()
-                            .error("Error: user do not exists")
-                            .build();
-                }
-            });
+    public Flux<Provider> getAllOrderByScore() {
+        return repository.findProvidersByActiveOrderByScoreAvgDesc(true);
     }
 
     public Mono<Provider> add(ProviderForm form) {
