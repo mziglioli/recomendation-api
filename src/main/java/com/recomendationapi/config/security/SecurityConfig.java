@@ -1,4 +1,4 @@
-package com.recomendationapi.config;
+package com.recomendationapi.config.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
@@ -11,34 +11,29 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.access.channel.ChannelProcessingFilter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.reactive.CorsConfigurationSource;
-import org.springframework.web.cors.reactive.CorsWebFilter;
-import org.springframework.web.server.ServerWebExchange;
 
 @EnableWebFluxSecurity
 @EnableReactiveMethodSecurity
 public class SecurityConfig {
 
     @Bean
+    public ReactiveServiceAuthenticationFilter reactiveServiceAuthenticationFilter() {
+        return new ReactiveServiceAuthenticationFilter();
+    }
+
+    @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http
                 .authorizeExchange()
-                .pathMatchers("/recommendation/**").permitAll()
+                .pathMatchers("/public/**", "/recommendation/**").permitAll()
                 .pathMatchers(HttpMethod.OPTIONS).permitAll()
                 .anyExchange().authenticated()
                 .and().httpBasic()
                 .and().formLogin().disable()
                 .csrf()
                 .disable()
-                .addFilterAt(new CorsWebFilter(new CorsConfigurationSource() {
-                    @Override
-                    public CorsConfiguration getCorsConfiguration(ServerWebExchange exchange) {
-                        return null;
-                    }
-                }), SecurityWebFiltersOrder.AUTHENTICATION)
+                .addFilterBefore(reactiveServiceAuthenticationFilter(), SecurityWebFiltersOrder.AUTHENTICATION)
                 .build();
     }
 
@@ -49,7 +44,12 @@ public class SecurityConfig {
                 .password(passwordEncoder().encode("password"))
                 .roles("ADMIN", "USER")
                 .build();
-        return new MapReactiveUserDetailsService(admin);
+        UserDetails user = User
+                .withUsername("user")
+                .password(passwordEncoder().encode("no_password"))
+                .roles("USER")
+                .build();
+        return new MapReactiveUserDetailsService(admin, user);
     }
 
     @Bean

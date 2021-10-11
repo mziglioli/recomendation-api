@@ -1,62 +1,43 @@
-package com.bookinggo.web.api.chat.engine.multilingual;
+package com.recomendationapi.client;
 
-import static com.bookinggo.web.api.chat.common.util.LoggingUtils.START_CONFIG;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-
-import com.bookinggo.web.api.chat.common.exception.ErrorResponse;
-import com.bookinggo.web.api.chat.translate.TranslateException;
+import com.recomendationapi.response.FacebookResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+@Configuration
 @Component
 @Slf4j
-public class MultilingualAdapter {
+public class FacebookClient {
 
+  private final FacebookConfig config;
   private final WebClient webClient;
-  private final MultilingualConfig config;
 
   @Autowired
-  public MultilingualAdapter(
-      MultilingualConfig config,
-      WebClient.Builder webClientBuilder,
-      ClientHttpConnector connector) {
-    this.config = config;
-    this.webClient =
-        webClientBuilder.baseUrl(config.getBaseUrl()).clientConnector(connector).build();
-    log.info(START_CONFIG, "Multilingual", config.getBaseUrl());
+  public FacebookClient(FacebookConfig config, WebClient.Builder webClientBuilder, ClientHttpConnector connector) {
+      this.config = config;
+      this.webClient = webClientBuilder
+              .baseUrl(config.getBaseUrl())
+              .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+              .clientConnector(connector)
+              .build();
+      log.info("FacebookClient: start config client: {}", config.getBaseUrl());
   }
 
-  public Mono<MultilingualResponse> translate(MultilingualForm form) {
-    log.info("Multilingual Translate: {}", form.toString());
+  public Mono<FacebookResponse> getMe(String token) {
+    log.info("FacebookClient: authenticate - {}{}{}", config.getBaseUrl(), config.getMeUrl(), token);
     return webClient
-        .post()
-        .uri(config.getTranslateUrl())
-        .contentType(APPLICATION_JSON)
-        .bodyValue(form)
+        .get()
+        .uri(config.getMeUrl() + "{token}", token)
         .retrieve()
-        .onStatus(
-            HttpStatus::is4xxClientError,
-            clientResponse ->
-                clientResponse
-                    .bodyToMono(ErrorResponse.class)
-                    .map(
-                        body ->
-                            new TranslateException(
-                                "Multilingual-Api 400 error: " + body.getMessage())))
-        .onStatus(
-            HttpStatus::is5xxServerError,
-            clientResponse ->
-                clientResponse
-                    .bodyToMono(ErrorResponse.class)
-                    .map(
-                        body ->
-                            new TranslateException(
-                                "Multilingual-Api 500 error: " + body.getMessage())))
-        .bodyToMono(MultilingualResponse.class);
+        .bodyToMono(FacebookResponse.class)
+        .doOnError(e -> log.error("FacebookClient:doOnError: getMe", e))
+        .onErrorReturn(new FacebookResponse());
   }
 }

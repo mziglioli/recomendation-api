@@ -29,6 +29,9 @@ public class RecommendationForm extends DefaultForm {
     @Size(max = 1000, message = "validator.invalid.comments")
     private String comments;
 
+    @NotEmpty(message = "validator.invalid.token")
+    private String token;
+
     public Recommendation buildRecommendation() {
         return Recommendation.builder()
                 .score(score)

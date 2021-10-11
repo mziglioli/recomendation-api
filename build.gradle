@@ -13,34 +13,52 @@ configurations {
 		extendsFrom annotationProcessor
 	}
 }
-
 repositories {
 	mavenCentral()
 }
-
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-actuator'
-	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb-reactive'
-	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	compileOnly 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-//	compile 'io.micrometer:micrometer-registry-prometheus'
-//	compile 'io.micrometer:micrometer-core'
-
-	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-	annotationProcessor 'org.projectlombok:lombok'
-	implementation 'org.springdoc:springdoc-openapi-webflux-ui:1.4.8'
-
-	testImplementation('org.springframework.boot:spring-boot-starter-test') {
-		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
-	}
-	testImplementation 'io.projectreactor:reactor-test'
-	testImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo'
-	testAnnotationProcessor "org.projectlombok:lombok"
-	testCompileOnly "org.projectlombok:lombok"
+	implementation (
+			'org.springframework.boot:spring-boot-starter-actuator',
+			'org.springframework.boot:spring-boot-starter-data-mongodb-reactive',
+			'org.springframework.boot:spring-boot-starter-security',
+			'org.springframework.boot:spring-boot-starter-webflux',
+			'org.springframework.boot:spring-boot-starter-validation'
+	)
+	compileOnly (
+			'org.projectlombok:lombok',
+			'io.micrometer:micrometer-registry-prometheus',
+			'io.micrometer:micrometer-core'
+	)
+	developmentOnly (
+			'org.springframework.boot:spring-boot-devtools'
+	)
+	annotationProcessor (
+			'org.springframework.boot:spring-boot-configuration-processor',
+			'org.projectlombok:lombok'
+	)
+	implementation (
+			'org.springdoc:springdoc-openapi-webflux-ui:1.4.8'
+	)
+	testImplementation(
+			'org.springframework.boot:spring-boot-starter-test',
+			'io.projectreactor:reactor-test',
+			'de.flapdoodle.embed:de.flapdoodle.embed.mongo',
+			'com.github.tomakehurst:wiremock:2.27.2'
+	)
+	testAnnotationProcessor (
+			'org.projectlombok:lombok'
+	)
+	testCompileOnly (
+			'org.projectlombok:lombok'
+	)
+	compile (
+			'io.seruco.encoding:base62:0.1.2',
+			'io.jsonwebtoken:jjwt-api:0.10.5'
+	)
+	runtime (
+			'io.jsonwebtoken:jjwt-impl:0.10.5', 'io.jsonwebtoken:jjwt-jackson:0.10.5'
+	)
 }
-
 test {
 	useJUnitPlatform()
 }

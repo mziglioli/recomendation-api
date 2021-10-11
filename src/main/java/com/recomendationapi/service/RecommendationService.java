@@ -1,11 +1,15 @@
 package com.recomendationapi.service;
 
+import com.recomendationapi.client.FacebookClient;
+import com.recomendationapi.form.LoginForm;
 import com.recomendationapi.form.RecommendationFindForm;
 import com.recomendationapi.form.RecommendationForm;
 import com.recomendationapi.model.Provider;
 import com.recomendationapi.model.Recommendation;
 import com.recomendationapi.model.User;
 import com.recomendationapi.response.DefaultResponse;
+import com.recomendationapi.response.FacebookResponse;
+import com.recomendationapi.response.UserLoginResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,7 +20,7 @@ import reactor.core.publisher.Mono;
 import javax.annotation.PostConstruct;
 import java.util.Comparator;
 
-import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.*;
 
 @Slf4j
 @Transactional
@@ -25,11 +29,65 @@ public class RecommendationService {
 
     private UserService userService;
     private ProviderService providerService;
+    private TokenService tokenService;
+    private FacebookClient facebookClient;
 
     @Autowired
-    public RecommendationService(UserService userService, ProviderService providerService) {
+    public RecommendationService(UserService userService, ProviderService providerService, TokenService tokenService, FacebookClient facebookClient) {
         this.userService = userService;
         this.providerService = providerService;
+        this.tokenService = tokenService;
+        this.facebookClient = facebookClient;
+    }
+
+
+    public Mono<DefaultResponse> login(LoginForm form) {
+        log.info("Login:init: {}", form.toString());
+        return Mono.zip(facebookClient.getMe(form.getMediaToken()), userService.getUserByMediaId(form.getMediaId()))
+                .map(objects -> {
+                    FacebookResponse facebookResponse = objects.getT1();
+                    log.info("Login:facebookResponse: {}", facebookResponse.toString());
+                    User user = objects.getT2();
+                    log.info("Login:user: {}", user.toString());
+
+                    if (isBlank(facebookResponse.getId())) {
+                        // not valid token should stop
+                        log.error("Login:facebookError");
+                        return DefaultResponse.builder()
+                                .error("Invalid media token")
+                                .build();
+                    }
+
+                    if (isEmpty(user.getId())) {
+                        // first time user has used this, save it
+                        log.info("Login:user - new user will be saved");
+                        user.setEmail(facebookResponse.getEmail());
+                        user.setInitials(facebookResponse.getInitials());
+                        user.setMediaId(facebookResponse.getId());
+                        user.setName(facebookResponse.getName());
+                        user.setMediaType("facebook");
+
+                        userService.save(user).subscribe();
+
+                    // user exists and need to match the mediaId with facebookId
+                    } else if (!user.getMediaId().equals(facebookResponse.getId())) {
+                        log.error("Login:facebookError");
+                        return DefaultResponse.builder()
+                                .error("Invalid media id")
+                                .build();
+                    }
+
+                    // generate token
+                    String token = tokenService.createToken(user);
+
+                    return DefaultResponse.builder()
+                            .success(true)
+                            .data(UserLoginResponse.builder()
+                                    .facebook(facebookResponse)
+                                    .token(token)
+                                    .build())
+                            .build();
+                });
     }
 
     public String hasErrors(String userId, String providerId) {

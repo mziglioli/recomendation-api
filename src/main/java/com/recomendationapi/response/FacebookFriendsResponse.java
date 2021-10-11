@@ -1,24 +1,17 @@
 package com.recomendationapi.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.*;
+
+import java.util.List;
 
 @Setter
 @Getter
 @Builder
 @AllArgsConstructor
-public class FacebookResponse {
+@NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class FacebookFriendsResponse {
 
-    private String id;
-
-    @JsonProperty("first_name")
-    private String firstName;
-
-    @JsonProperty("last_name")
-    private String lastName;
-
-    private Object friends;
+    private List<FacebookFriendResponse> data;
 }

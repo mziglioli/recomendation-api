@@ -1,6 +1,5 @@
-package com.mz.authorization.service;
+package com.recomendationapi.service;
 
-import com.mz.authorization.exception.ValidationException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -60,7 +59,7 @@ public class JwtService {
    * @throws Exception if token expired or before date
    * @return string
    */
-  public String decryptToken(String token) {
+  public String decryptToken(String token) throws Exception {
     Claims claims =
         Jwts.parser()
             .setSigningKey(Keys.hmacShaKeyFor(secret.getBytes()))
@@ -68,10 +67,10 @@ public class JwtService {
             .getBody();
 
     if (isTokenBefore(claims)) {
-      throw new ValidationException("Token is before by: " + claims.getNotBefore());
+      throw new Exception("Token is before by: " + claims.getNotBefore());
     }
     if (isTokenExpired(claims)) {
-      throw new ValidationException("Token is expired by: " + claims.getExpiration());
+      throw new Exception("Token is expired by: " + claims.getExpiration());
     }
     return claims.getSubject();
   }

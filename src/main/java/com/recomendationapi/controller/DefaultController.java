@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -17,6 +18,7 @@ import javax.validation.Valid;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Slf4j
+@PreAuthorize("hasRole('ADMIN')")
 @AllArgsConstructor(onConstructor = @__(@Autowired))
 public abstract class DefaultController<S extends DefaultService<E, R>, E extends Entity, F extends DefaultForm, R extends ReactiveMongoRepository<E, String>> {
 

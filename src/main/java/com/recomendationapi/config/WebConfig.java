@@ -1,4 +1,4 @@
-package com.mz.authorization.config;
+package com.recomendationapi.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

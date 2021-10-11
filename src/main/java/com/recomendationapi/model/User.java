@@ -23,6 +23,7 @@ public class User extends Entity {
     @Id
     private String id;
     private String name;
+    private String initials;
     private String email;
     private String mediaId;
     private String mediaType;

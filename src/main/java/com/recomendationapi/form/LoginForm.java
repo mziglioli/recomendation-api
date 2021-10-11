@@ -3,7 +3,6 @@ package com.recomendationapi.form;
 import lombok.*;
 
 import javax.validation.constraints.NotEmpty;
-import java.util.List;
 
 @ToString
 @Getter
@@ -11,8 +10,11 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RecommendationFindForm extends DefaultForm {
+public class LoginForm extends DefaultForm {
 
-    @NotEmpty(message = "validator.invalid.userIds")
-    private List<String> userIds;
+    @NotEmpty(message = "validator.invalid.mediaId")
+    private String mediaId;
+
+    @NotEmpty(message = "validator.invalid.mediaToken")
+    private String mediaToken;
 }

@@ -1,11 +1,22 @@
 package com.recomendationapi;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.WireMockServer;
 import com.recomendationapi.form.ProviderForm;
 import com.recomendationapi.form.RecommendationForm;
 import com.recomendationapi.model.Provider;
 import com.recomendationapi.model.User;
+import com.recomendationapi.response.FacebookResponse;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.springframework.util.ResourceUtils;
+
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TestUtils {
@@ -14,6 +25,9 @@ public class TestUtils {
     public final static String USER_MEDIA_ID_VALID = "123_Face";
     public final static String USER_MEDIA_ID_INVALID = "0000000";
     public final static String PROVIDER_NAME_VALID = "Test Provider";
+    public final static String URI_ME = "/me?fields=id,email,friends,last_name,first_name&format=json&method=get&pretty=0&transport=cors&access_token=";
+
+    public static ObjectMapper mapper = new ObjectMapper();
 
     public static User buildUserValid() {
         return User.builder()
@@ -56,5 +70,37 @@ public class TestUtils {
                 .build();
     }
 
+
+    public static String getJsonFromFile(String filePath) throws Exception {
+        File file = ResourceUtils.getFile("classpath:__files/" + filePath);
+        return Files.readString(file.toPath());
+    }
+
+    public static Object getObjectFromFile(String filePath, Class clazz) throws Exception {
+        String json = getJsonFromFile(filePath);
+        return mapper.readValue(json, clazz);
+    }
+
+    public static FacebookResponse getFacebookSuccess() throws Exception {
+        return (FacebookResponse)
+                getObjectFromFile("facebook/success.json", FacebookResponse.class);
+    }
+
+    static void addGetStub(WireMockServer wireMockServer, String uri, String json, int status) {
+        wireMockServer.stubFor(
+                get(uri)
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(status)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(json)));
+    }
+
+    public static void addGetStub(WireMockServer wireMockServer, String uri, String json) {
+        addGetStub(wireMockServer, uri, json, 200);
+    }
+    public static void addGetStub400(WireMockServer wireMockServer, String uri, String json) {
+        addGetStub(wireMockServer, uri, json, 400);
+    }
 
 }

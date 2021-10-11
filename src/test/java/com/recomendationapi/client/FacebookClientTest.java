@@ -1,64 +1,53 @@
-package com.bookinggo.web.api.chat.config;
+package com.recomendationapi.client;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
-
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.matching.StringValuePattern;
-import org.junit.jupiter.api.BeforeEach;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.recomendationapi.WireMockInitializer;
+import com.recomendationapi.response.FacebookResponse;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import static com.recomendationapi.TestUtils.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest(webEnvironment = RANDOM_PORT)
-@EnableCaching
-@AutoConfigureWebTestClient
-@EnableAspectJAutoProxy
-@ActiveProfiles(profiles = "test")
-@AutoConfigureWireMock(port = 9999)
-public class WireMockTestBase extends UtilsTestBase {
+@SpringBootTest
+@ContextConfiguration(initializers = { WireMockInitializer.class })
+public class FacebookClientTest {
+
+  @Autowired
+  private WireMockServer wireMockServer;
+
+  @Autowired
+  private FacebookClient facebookClient;
+
+  @AfterEach
+  public void afterEach() {
+    wireMockServer.resetAll();
+  }
 
   @BeforeEach
-  public void beforeStub() {
-    WireMock.resetAllRequests();
+  public void beforeEach() throws Exception {
+    String success = getJsonFromFile("facebook/success.json");
+    addGetStub(wireMockServer, URI_ME + "123", success);
+
+    String error = getJsonFromFile("facebook/error.json");
+    addGetStub400(wireMockServer, URI_ME + "999", error);
+
   }
 
-  protected void addPostStub(
-      String uri, StringValuePattern requestBody, int status, String bodyFile) {
-    stubFor(
-        post(uri)
-            .withRequestBody(requestBody)
-            .willReturn(
-                aResponse()
-                    .withStatus(status)
-                    .withHeader("Content-Type", "application/json")
-                    .withBodyFile(bodyFile)));
+  @Test
+  @DisplayName("Should return a valid facebook response when valid token")
+  void test__valid() {
+    FacebookResponse response = facebookClient.getMe("123").block();
+    assertNotNull(response);
+    assertEquals("123456789120000", response.getId());
   }
 
-  protected void addPutStub(
-      String uri, StringValuePattern requestBody, int status, String bodyFile) {
-    stubFor(
-        put(uri)
-            .withRequestBody(requestBody)
-            .willReturn(
-                aResponse()
-                    .withStatus(status)
-                    .withHeader("Content-Type", "application/json")
-                    .withHeader("X-RC-Application", "webapp")
-                    .withBodyFile(bodyFile)));
-  }
-
-  protected void addGetStub(String uri, int status, String bodyFile) {
-    stubFor(
-        get(uri)
-            .willReturn(
-                aResponse()
-                    .withStatus(status)
-                    .withHeader("Content-Type", "application/json")
-                    .withHeader("X-RC-Application", "webapp")
-                    .withBodyFile(bodyFile)));
+  @Test
+  @DisplayName("Should return an new empty facebook response when invalid token")
+  void test__invalid() {
+    FacebookResponse response = facebookClient.getMe("999").block();
+    assertNotNull(response);
+    assertNull(response.getId());
   }
 }
