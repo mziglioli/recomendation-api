@@ -6,6 +6,7 @@ import com.recomendationapi.model.User;
 import com.recomendationapi.repository.ProviderRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,8 +39,12 @@ public class ProviderService extends DefaultService<Provider, ProviderRepository
         return repository.findProvidersByActiveOrderByScoreAvgDesc(true);
     }
 
-    public List<Provider> getProviderByUserRecommendation(List<String> userIds) {
-        return repository.findProvidersByRecommendationsUserIdsOrderByScoreAvgDesc(userIds);
+    public List<Provider> getProviderByUserRecommendation(List<String> userIds, int page, int size) {
+
+        List<Provider> list = repository.findProvidersByRecommendationsUserIdsOrderByScoreAvgDesc(userIds);
+
+        List<Provider> list2 = repository.findProvidersByRecommendationsUserIdsOrderByScoreAvgDesc(userIds, PageRequest.of(page, size));
+        return list2;
     }
 
     public Provider add(ProviderForm form) {

@@ -11,12 +11,12 @@ import com.recomendationapi.response.DefaultResponse;
 import com.recomendationapi.response.FacebookResponse;
 import com.recomendationapi.response.UserLoginResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
@@ -89,19 +89,8 @@ public class RecommendationService {
                 .build();
     }
 
-    public String hasErrors(String userId, String providerId) {
-        String error = "";
-        if (isEmpty(userId)) {
-            error += " user not exists;";
-        }
-        if (isEmpty(providerId)) {
-            error += " provider not exists;";
-        }
-        return isEmpty(error) ? null : "Error: " + error;
-    }
-
     public List<Provider> getRecommendations(RecommendationFindForm form) {
-        return providerService.getProviderByUserRecommendation(form.getUserIds());
+        return providerService.getProviderByUserRecommendation(form.getUserIds(), form.getPage(), form.getSize());
     }
 
     public List<Provider> getRecommendations() {
@@ -109,43 +98,41 @@ public class RecommendationService {
     }
 
     public DefaultResponse addRecommendation (RecommendationForm form) {
-        log.info("addRecommendation: " + form.toString());
-        User user = userService.getUserByMediaId(form.getUserId());
-        if (user == null) {
+        User user = userService.getAuthenticatedUser();
+        if (user == null || isEmpty(user.getId())) {
             return DefaultResponse.builder()
                     .error("Error: user not exists")
                     .build();
         }
+
+        // validate the form
+        if (!StringUtils.equals(user.getMediaId(), form.getUserId())) {
+            return DefaultResponse.builder()
+                    .error("Error: user do not match logged user")
+                    .build();
+        }
+
         Provider provider = providerService.getProviderById(form.getProviderId());
-        if (provider == null) {
+        if (provider == null || isEmpty(provider.getId())) {
             return DefaultResponse.builder()
                     .error("Error: provider not exists")
                     .build();
         }
-        String errors = hasErrors(user.getId(), provider.getId());
-        log.info("addRecommendation: errors: " + errors);
+        Recommendation recommendation = form.buildRecommendation();
+        user.addRecommendation(recommendation);
+        userService.save(user);
+        log.info("addRecommendation: user: success");
 
-        if (errors == null) {
-            Recommendation recommendation = form.buildRecommendation();
+        provider.addRecommendation(recommendation);
+        providerService.save(provider);
+        log.info("addRecommendation: provider: success");
 
-            user.addRecommendation(recommendation);
-            userService.save(user);
-            log.info("addRecommendation: user: success");
-
-            provider.addRecommendation(recommendation);
-
-            providerService.save(provider);
-            log.info("addRecommendation: provider: success");
-
-            return DefaultResponse.builder()
-                    .success(true)
-                    .data(recommendation)
-                    .build();
-        }
         return DefaultResponse.builder()
-                .error(errors)
+                .success(true)
+                .data(recommendation)
                 .build();
     }
+
 
     public User buildUser(int i) {
         return User.builder()

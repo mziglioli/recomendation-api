@@ -2,9 +2,17 @@ package com.recomendationapi.service;
 
 import com.recomendationapi.form.DefaultForm;
 import com.recomendationapi.model.Entity;
+import com.recomendationapi.model.User;
 import com.recomendationapi.response.DefaultResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,6 +36,9 @@ public abstract class DefaultService<T extends Entity, R extends MongoRepository
     public List<T> getAll() {
         log.info("getAll");
         return repository.findAll();
+    }
+    public Page<T> getPage(int page, int size) {
+        return repository.findAll(PageRequest.of(page, size));
     }
     public T getById(String id) {
         log.info("getById");
@@ -69,6 +80,9 @@ public abstract class DefaultService<T extends Entity, R extends MongoRepository
     public T delete(String id) {
         log.info("deleteWait: start");
         T entity = getById(id);
+        if (entity == null) {
+            throw new RuntimeException("entity do not exists");
+        }
         log.info("deleteWait: pending");
         return delete(entity);
     }
@@ -89,6 +103,21 @@ public abstract class DefaultService<T extends Entity, R extends MongoRepository
     }
     public String getAuthenticatedUserId() {
         return "0";
+    }
+
+    public User getAuthenticatedUser() throws AccessDeniedException {
+        try {
+            SecurityContext context = SecurityContextHolder.getContext();
+            if (context != null) {
+                Authentication auth = context.getAuthentication();
+                if (auth != null && !(auth instanceof AnonymousAuthenticationToken)) {
+                    return (User) SecurityContextHolder.getContext().getAuthentication().getDetails();
+                }
+            }
+            throw new AccessDeniedException("user not found in context");
+        } catch (Exception e) {
+            throw new AccessDeniedException(e.getMessage());
+        }
     }
     LocalDateTime getTime() {
         return LocalDateTime.now();

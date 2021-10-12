@@ -51,19 +51,36 @@ public class Provider extends Entity {
         recommendations.removeIf(r -> StringUtils.equals(recommendation.getUserId(), r.getUserId()));
         recommendations.add(recommendation);
 
+        // add ids to quick search on repository
+        addRecommendationId(recommendation);
+
+        // calculate average
+        refreshScore();
+    }
+
+    @Transient
+    public void addRecommendationId(Recommendation recommendation) {
         if (recommendationsUserIds == null) {
             recommendationsUserIds = new ArrayList<>();
         }
         recommendationsUserIds.removeIf(r -> StringUtils.equals(recommendation.getUserId(), r));
         recommendationsUserIds.add(recommendation.getUserId());
+    }
 
-        OptionalDouble avg = recommendations.stream().mapToInt(Recommendation::getScore).average();
-        if (avg.isPresent()) {
-            setScoreAvg((int) Math.round(avg.getAsDouble()));
+    @Transient
+    public void refreshScore() {
+        if (recommendations != null && !recommendations.isEmpty()) {
+            OptionalDouble avg = recommendations.stream().mapToInt(Recommendation::getScore).average();
+            if (avg.isPresent()) {
+                setScoreAvg((int) Math.round(avg.getAsDouble()));
+            } else {
+                setScoreAvg(0);
+            }
         } else {
             setScoreAvg(0);
         }
     }
+
 
     @Transient
     @Override
