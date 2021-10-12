@@ -35,16 +35,12 @@ public class ProviderService extends DefaultService<Provider, ProviderRepository
         return repository.findProviderByNameIsLike(name).orElse(new Provider());
     }
 
-    public List<Provider> getAllOrderByScore() {
-        return repository.findProvidersByActiveOrderByScoreAvgDesc(true);
+    public List<Provider> getAllOrderByScore(int page, int size) {
+        return repository.findProvidersByActiveOrderByScoreAvgDesc(true, PageRequest.of(page, size));
     }
 
     public List<Provider> getProviderByUserRecommendation(List<String> userIds, int page, int size) {
-
-        List<Provider> list = repository.findProvidersByRecommendationsUserIdsOrderByScoreAvgDesc(userIds);
-
-        List<Provider> list2 = repository.findProvidersByRecommendationsUserIdsOrderByScoreAvgDesc(userIds, PageRequest.of(page, size));
-        return list2;
+        return repository.findProvidersByRecommendationsUserIdsOrderByScoreAvgDesc(userIds, PageRequest.of(page, size));
     }
 
     public Provider add(ProviderForm form) {

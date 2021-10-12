@@ -12,7 +12,6 @@ import java.util.Optional;
 public interface ProviderRepository extends MongoRepository<Provider, String> {
 
     Optional<Provider> findProviderByNameIsLike(String name);
-    List<Provider> findProvidersByRecommendationsUserIdsOrderByScoreAvgDesc(List<String> ids);
     List<Provider> findProvidersByRecommendationsUserIdsOrderByScoreAvgDesc(List<String> ids, Pageable pageable);
-    List<Provider> findProvidersByActiveOrderByScoreAvgDesc(boolean active);
+    List<Provider> findProvidersByActiveOrderByScoreAvgDesc(boolean active, Pageable pageable);
 }

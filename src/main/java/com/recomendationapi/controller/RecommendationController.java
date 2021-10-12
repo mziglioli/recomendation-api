@@ -18,6 +18,7 @@ import javax.validation.Valid;
 import java.util.List;
 
 import static com.recomendationapi.controller.DefaultController.LOG_REQUEST;
+import static org.apache.commons.lang3.StringUtils.isNumeric;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @Slf4j
@@ -35,9 +36,17 @@ public class RecommendationController {
 
   @GetMapping("/all")
   @ResponseStatus(HttpStatus.OK)
-  public List<Provider> all() {
+  public List<Provider> all(@RequestParam(required = false) String page, @RequestParam(required = false) String size) {
     log.info(LOG_REQUEST, "all");
-    return service.getRecommendations();
+    int s = 100;
+    int p = 0;
+    if (isNumeric(page)) {
+      p = Integer.parseInt(page);
+    }
+    if (isNumeric(size)) {
+      s = Integer.parseInt(size);
+    }
+    return service.getRecommendations(p, s);
   }
 
   @PostMapping("/")

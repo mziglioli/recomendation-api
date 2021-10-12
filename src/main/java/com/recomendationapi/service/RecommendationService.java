@@ -93,8 +93,8 @@ public class RecommendationService {
         return providerService.getProviderByUserRecommendation(form.getUserIds(), form.getPage(), form.getSize());
     }
 
-    public List<Provider> getRecommendations() {
-        return providerService.getAllOrderByScore();
+    public List<Provider> getRecommendations(int page, int size) {
+        return providerService.getAllOrderByScore(page, size);
     }
 
     public DefaultResponse addRecommendation (RecommendationForm form) {
