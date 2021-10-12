@@ -38,7 +38,7 @@ public class FacebookClientTest {
   @Test
   @DisplayName("Should return a valid facebook response when valid token")
   void test__valid() {
-    FacebookResponse response = facebookClient.getMe("123").block();
+    FacebookResponse response = facebookClient.getMe("123");
     assertNotNull(response);
     assertEquals("123456789120000", response.getId());
   }
@@ -46,7 +46,7 @@ public class FacebookClientTest {
   @Test
   @DisplayName("Should return an new empty facebook response when invalid token")
   void test__invalid() {
-    FacebookResponse response = facebookClient.getMe("999").block();
+    FacebookResponse response = facebookClient.getMe("999");
     assertNotNull(response);
     assertNull(response.getId());
   }

@@ -1,14 +1,16 @@
 package com.recomendationapi.repository;
 
 import com.recomendationapi.model.Provider;
-import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+
+import java.util.List;
+import java.util.Optional;
 
 @Repository
-public interface ProviderRepository extends ReactiveMongoRepository<Provider, String> {
+public interface ProviderRepository extends MongoRepository<Provider, String> {
 
-    Mono<Provider> findProviderByNameIsLike(String name);
-    Flux<Provider> findProvidersByActiveOrderByScoreAvgDesc(boolean active);
+    Optional<Provider> findProviderByNameIsLike(String name);
+    List<Provider> findProvidersByRecommendationsUserIdsOrderByScoreAvgDesc(List<String> ids);
+    List<Provider> findProvidersByActiveOrderByScoreAvgDesc(boolean active);
 }

@@ -5,6 +5,7 @@ import com.recomendationapi.model.User;
 import lombok.*;
 
 import javax.validation.constraints.NotEmpty;
+import java.util.List;
 
 @ToString
 @Getter
@@ -25,6 +26,12 @@ public class UserForm extends DefaultForm {
     @NotEmpty(message = "validator.invalid.mediaType")
     private String mediaType;
 
+    @NotEmpty(message = "validator.invalid.password")
+    private String password;
+
+    @NotEmpty(message = "validator.invalid.initials")
+    private String initials;
+
     @Override
     public User convertToEntity() {
         return User.builder()
@@ -33,6 +40,9 @@ public class UserForm extends DefaultForm {
                 .email(email)
                 .mediaType(mediaType)
                 .mediaId(mediaId)
+                .password(password)
+                .initials(initials)
+                .roles(List.of("ROLES_USER"))
                 .build();
     }
 }

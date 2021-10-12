@@ -22,14 +22,14 @@ public class UserRepositoryTest {
     @Test()
     @DisplayName("should find the user by mediaId")
     public void testValid() {
-        User dbUser = repository.findUserByMediaId(USER_MEDIA_ID_VALID).block();
+        User dbUser = repository.findUserByMediaId(USER_MEDIA_ID_VALID).orElse(null);
         assertNull(dbUser);
 
         User user = buildUserValid();
-        repository.save(user).block();
+        repository.save(user);
 
 
-        dbUser = repository.findUserByMediaId(USER_MEDIA_ID_VALID).block();
+        dbUser = repository.findUserByMediaId(USER_MEDIA_ID_VALID).orElse(null);
         assertNotNull(dbUser);
         assertEquals(USER_MEDIA_ID_VALID, dbUser.getMediaId());
     }
@@ -38,15 +38,15 @@ public class UserRepositoryTest {
     @DisplayName("should find the user by mediaId updated")
     public void testValidUpdated() {
         User user = buildUserValid();
-        repository.save(user).block();
+        repository.save(user);
 
-        User dbUser = repository.findUserByMediaId(USER_MEDIA_ID_VALID).block();
+        User dbUser = repository.findUserByMediaId(USER_MEDIA_ID_VALID).orElse(null);
         assertNotNull(dbUser);
         assertEquals(USER_MEDIA_ID_VALID, dbUser.getMediaId());
         assertFalse(dbUser.isActive());
 
         dbUser.setActive(true);
-        repository.save(user).block();
+        repository.save(user);
 
         assertNotNull(dbUser);
         assertEquals(USER_MEDIA_ID_VALID, dbUser.getMediaId());
@@ -57,9 +57,9 @@ public class UserRepositoryTest {
     @DisplayName("should NOT find the user by mediaId when user do not exists")
     public void testInvalid() {
         User user = buildUserValid();
-        repository.save(user).block();
+        repository.save(user);
 
-        User dbUser = repository.findUserByMediaId("invalid").block();
+        User dbUser = repository.findUserByMediaId("invalid").orElse(null);
         assertNull(dbUser);
     }
 }

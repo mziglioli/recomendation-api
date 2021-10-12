@@ -8,8 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
@@ -26,32 +26,35 @@ public class ProviderService extends DefaultService<Provider, ProviderRepository
         this.userService = userService;
     }
 
-    public Mono<Provider> getProviderById(String id) {
-        return repository.findById(id).defaultIfEmpty(new Provider());
+    public Provider getProviderById(String id) {
+        return repository.findById(id).orElse(new Provider());
     }
 
-    public Mono<Provider> getProvider(String name) {
-        return repository.findProviderByNameIsLike(name).defaultIfEmpty(new Provider());
+    public Provider getProvider(String name) {
+        return repository.findProviderByNameIsLike(name).orElse(new Provider());
     }
 
-    public Flux<Provider> getAllOrderByScore() {
+    public List<Provider> getAllOrderByScore() {
         return repository.findProvidersByActiveOrderByScoreAvgDesc(true);
     }
 
-    public Mono<Provider> add(ProviderForm form) {
+    public List<Provider> getProviderByUserRecommendation(List<String> userIds) {
+        return repository.findProvidersByRecommendationsUserIdsOrderByScoreAvgDesc(userIds);
+    }
+
+    public Provider add(ProviderForm form) {
         log.info("add:provider: start form:" + form.toString());
         Provider entity = form.convertToEntity();
         log.info("add:provider: start entity:" + entity.toString());
-        return Mono.zip(userService.getUserByMediaId(form.getUserId()), getProvider(entity.getName()))
-            .map(objects -> {
-                User user = objects.getT1();
-                Provider provider = objects.getT2();
-                log.info("add:provider: pending =" + user.toString() + "; " + provider.toString());
-                if (isNotEmpty(user.getId())) {
-                    return validateAndSaveEntity(entity, provider);
-                } else {
-                    throw new RuntimeException("User do NOT exists, get out :)");
-                }
-            });
+
+        User user = userService.getUserByMediaId(form.getUserId());
+        if (isNotEmpty(user.getId())) {
+            Provider provider = getProvider(entity.getName());
+            log.info("add:provider: pending =" + user.toString() + "; " + provider.toString());
+            return validateAndSaveEntity(entity, provider);
+        } else {
+            throw new RuntimeException("User do NOT exists, get out :)");
+        }
+
     }
 }

@@ -15,7 +15,7 @@ import java.util.OptionalDouble;
 
 @Getter
 @Setter
-@ToString(of = {"id", "email", "name", "address", "city", "postCode"})
+@ToString(of = {"id", "email", "name", "address", "city", "postCode","scoreAvg","recommendationsUserIds"})
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -33,7 +33,7 @@ public class Provider extends Entity {
     private String phone;
     private String creatorId;
     private int scoreAvg;
-
+    private List<String> recommendationsUserIds;
     private List<Recommendation> recommendations;
 
     public int getScoreQtd() {
@@ -50,6 +50,12 @@ public class Provider extends Entity {
         }
         recommendations.removeIf(r -> StringUtils.equals(recommendation.getUserId(), r.getUserId()));
         recommendations.add(recommendation);
+
+        if (recommendationsUserIds == null) {
+            recommendationsUserIds = new ArrayList<>();
+        }
+        recommendationsUserIds.removeIf(r -> StringUtils.equals(recommendation.getUserId(), r));
+        recommendationsUserIds.add(recommendation.getUserId());
 
         OptionalDouble avg = recommendations.stream().mapToInt(Recommendation::getScore).average();
         if (avg.isPresent()) {

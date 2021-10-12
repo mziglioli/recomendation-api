@@ -11,6 +11,5 @@ import lombok.*;
 public class UserLoginResponse {
 
     private FacebookResponse facebook;
-
     private String token;
 }

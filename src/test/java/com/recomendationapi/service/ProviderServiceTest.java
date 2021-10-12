@@ -9,6 +9,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import reactor.core.publisher.Mono;
 
+import java.util.Optional;
+
 import static com.recomendationapi.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
@@ -25,7 +27,7 @@ class ProviderServiceTest {
   @DisplayName("Should return the correct provider by name")
   void test__validProvider() {
     mock();
-    Provider provider = service.getProvider(PROVIDER_NAME_VALID).block();
+    Provider provider = service.getProvider(PROVIDER_NAME_VALID);
     assertNotNull(provider);
     assertEquals(PROVIDER_NAME_VALID, provider.getName());
   }
@@ -34,15 +36,15 @@ class ProviderServiceTest {
   @DisplayName("should return empty provider when not find by name")
   void test__invalidProvider() {
     mock();
-    Provider provider = service.getProvider("any").block();
+    Provider provider = service.getProvider("any");
     assertNotNull(provider);
     assertNull(provider.getId());
   }
 
   private void mock() {
     given(repository.findProviderByNameIsLike(PROVIDER_NAME_VALID))
-          .willReturn(Mono.just(buildProviderValid()));
+          .willReturn(Optional.of(buildProviderValid()));
     given(repository.findProviderByNameIsLike("any"))
-            .willReturn(Mono.empty());
+            .willReturn(Optional.empty());
   }
 }

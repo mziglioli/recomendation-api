@@ -4,16 +4,15 @@ import com.recomendationapi.form.DefaultForm;
 import com.recomendationapi.model.Entity;
 import com.recomendationapi.response.DefaultResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 @Slf4j
-public abstract class DefaultService<T extends Entity, R extends ReactiveMongoRepository<T, String>> {
+public abstract class DefaultService<T extends Entity, R extends MongoRepository<T, String>> {
 
     protected R repository;
 
@@ -21,21 +20,21 @@ public abstract class DefaultService<T extends Entity, R extends ReactiveMongoRe
         this.repository = repository;
     }
 
-    public Mono<Long> count() {
+    public Long count() {
         log.info("count");
         return repository.count();
     }
 
-    public Flux<T> getAll() {
+    public List<T> getAll() {
         log.info("getAll");
         return repository.findAll();
     }
-    public Mono<T> getById(String id) {
+    public T getById(String id) {
         log.info("getById");
-        return repository.findById(id);
+        return repository.findById(id).orElse(null);
     }
 
-    Mono<T> save(T entity) {
+    T save(T entity) {
         log.info("prepare to save");
         if (null != entity.getId()) {
             return update(entity);
@@ -45,53 +44,33 @@ public abstract class DefaultService<T extends Entity, R extends ReactiveMongoRe
             return repository.save(entity);
         }
     }
-    public Mono<T> save(DefaultForm form) {
+    public T save(DefaultForm form) {
         T entity = (T) form.convertToEntity();
         return save(entity);
     }
-    public Mono<T> saveWait(DefaultForm form) {
-        log.info("saveWait: start");
-        Mono<T> res = save(form);
-        log.info("saveWait: saved");
-        return res;
-    }
-    Mono<T> update(T entity) {
+    T update(T entity) {
         log.info("update: pending");
         beforeUpdate(entity);
         return repository.save(entity);
     }
-    public Mono<T> updateWait(Entity entity) {
-        log.info("updateWait: start");
-        Mono<T> res = update((T) entity);
-        log.info("updateWait: updated");
-        return res;
-    }
-    public Mono<T> update(String id, DefaultForm form) {
-        return getById(id)
-            .switchIfEmpty(Mono.error(new RuntimeException("entity do not exists")))
-            .map(entity -> {
-                // update the entity with form details
-                entity.modify(form);
-                updateWait(entity).subscribe();
-                return entity;
-            });
+    public T update(String id, DefaultForm form) {
+        T entity = getById(id);
+        if (entity == null) {
+            throw new RuntimeException("entity do not exists");
+        }
+        entity.modify(form);
+        return update(entity);
     }
 
-    Mono<T> delete(T entity) {
+    T delete(T entity) {
         beforeDelete(entity);
         return repository.save(entity);
     }
-    public Mono<T> delete(String id) {
-        return repository.findById(id)
-                .flatMap(this::delete);
-    }
-    public Mono<T> deleteWait(String id) {
+    public T delete(String id) {
         log.info("deleteWait: start");
-        Mono<T> res = delete(id);
+        T entity = getById(id);
         log.info("deleteWait: pending");
-        res.subscribe();
-        log.info("deleteWait: subscribe");
-        return res;
+        return delete(entity);
     }
 
     void beforeInsert(T entity) {
@@ -137,8 +116,7 @@ public abstract class DefaultService<T extends Entity, R extends ReactiveMongoRe
                 throw new RuntimeException("Entity already exists but not active");
             }
         } else {
-            // block so we have it refreshed in db
-            entity = save(entity).block();
+            entity = save(entity);
             return entity;
         }
     }

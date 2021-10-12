@@ -6,9 +6,12 @@ import com.recomendationapi.service.RecommendationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Mono;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 import static com.recomendationapi.controller.DefaultController.LOG_REQUEST;
@@ -28,8 +31,11 @@ public class PublicController {
 
   @PostMapping("/login")
   @ResponseStatus(HttpStatus.OK)
-  public Mono<DefaultResponse> login(@Valid @RequestBody LoginForm form) {
-    log.info(LOG_REQUEST, "add", form);
-    return service.login(form);
+  public DefaultResponse login(HttpServletResponse response, @Valid @RequestBody LoginForm form, BindingResult bindingResult) throws BindException {
+    log.info(LOG_REQUEST, "login", form);
+    if(bindingResult.hasErrors()){
+      throw new BindException(bindingResult);
+    }
+    return service.login(response, form);
   }
 }

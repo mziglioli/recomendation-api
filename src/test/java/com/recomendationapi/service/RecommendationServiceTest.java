@@ -26,25 +26,25 @@ class RecommendationServiceTest {
   @DisplayName("given a valid userid and providerid and valid recommendation should be inserted")
   void test__valid() {
     User user = buildUserValid();
-    userService.save(user).block();
+    userService.save(user);
 
     Provider provider = buildProviderValid();
-    Provider providerDb = providerService.save(provider).block();
+    Provider providerDb = providerService.save(provider);
 
     RecommendationForm form = buildRecommendationForm(providerDb.getId());
 
-    DefaultResponse response = service.addRecommendation(form).block();
+    DefaultResponse response = service.addRecommendation(form);
     assertNotNull(response);
     assertTrue(response.isSuccess());
 
 
-    User userUpdated = userService.getUserByMediaId(USER_MEDIA_ID_VALID).block();
+    User userUpdated = userService.getUserByMediaId(USER_MEDIA_ID_VALID);
     assertNotNull(userUpdated);
     assertNotNull(userUpdated.getRecommendations());
     assertEquals(1, userUpdated.getRecommendations().size());
 
 
-    Provider providerUpdated = providerService.getProviderById(providerDb.getId()).block();
+    Provider providerUpdated = providerService.getProviderById(providerDb.getId());
     assertNotNull(providerUpdated);
     assertNotNull(providerUpdated.getRecommendations());
     assertEquals(1, providerUpdated.getRecommendations().size());
@@ -54,15 +54,15 @@ class RecommendationServiceTest {
   @DisplayName("given a invalid userId")
   void test__invalidUser() {
     User user = buildUserValid();
-    userService.save(user).block();
+    userService.save(user);
 
     Provider provider = buildProviderValid();
-    Provider providerDb = providerService.save(provider).block();
+    Provider providerDb = providerService.save(provider);
 
     RecommendationForm form = buildRecommendationForm(providerDb.getId());
     form.setUserId("any_wrong_id");
 
-    DefaultResponse response = service.addRecommendation(form).block();
+    DefaultResponse response = service.addRecommendation(form);
     assertNotNull(response);
     assertFalse(response.isSuccess());
     assertEquals("Error:  user not exists;", response.getError());
@@ -72,14 +72,14 @@ class RecommendationServiceTest {
   @DisplayName("given a invalid providerId")
   void test__invalidProvider() {
     User user = buildUserValid();
-    userService.save(user).block();
+    userService.save(user);
 
     Provider provider = buildProviderValid();
-    providerService.save(provider).block();
+    providerService.save(provider);
 
     RecommendationForm form = buildRecommendationForm("any_provider_id");
 
-    DefaultResponse response = service.addRecommendation(form).block();
+    DefaultResponse response = service.addRecommendation(form);
     assertNotNull(response);
     assertFalse(response.isSuccess());
     assertEquals("Error:  provider not exists;", response.getError());
@@ -89,15 +89,15 @@ class RecommendationServiceTest {
   @DisplayName("given a invalid userId and providerId")
   void test__invalidUserAndProvider() {
     User user = buildUserValid();
-    userService.save(user).block();
+    userService.save(user);
 
     Provider provider = buildProviderValid();
-    providerService.save(provider).block();
+    providerService.save(provider);
 
     RecommendationForm form = buildRecommendationForm("any_provider_id");
     form.setUserId("any_wrong_id");
 
-    DefaultResponse response = service.addRecommendation(form).block();
+    DefaultResponse response = service.addRecommendation(form);
     assertNotNull(response);
     assertFalse(response.isSuccess());
     assertEquals("Error:  user not exists; provider not exists;", response.getError());

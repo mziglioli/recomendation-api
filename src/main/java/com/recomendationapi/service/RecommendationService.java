@@ -14,11 +14,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import javax.annotation.PostConstruct;
-import java.util.Comparator;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 
 import static org.apache.commons.lang3.StringUtils.*;
 
@@ -41,53 +41,52 @@ public class RecommendationService {
     }
 
 
-    public Mono<DefaultResponse> login(LoginForm form) {
+    public DefaultResponse login(HttpServletResponse response, LoginForm form) {
         log.info("Login:init: {}", form.toString());
-        return Mono.zip(facebookClient.getMe(form.getMediaToken()), userService.getUserByMediaId(form.getMediaId()))
-                .map(objects -> {
-                    FacebookResponse facebookResponse = objects.getT1();
-                    log.info("Login:facebookResponse: {}", facebookResponse.toString());
-                    User user = objects.getT2();
-                    log.info("Login:user: {}", user.toString());
+        FacebookResponse facebookResponse = facebookClient.getMe(form.getMediaToken());
+        log.info("Login:facebookResponse: {}", facebookResponse.toString());
 
-                    if (isBlank(facebookResponse.getId())) {
-                        // not valid token should stop
-                        log.error("Login:facebookError");
-                        return DefaultResponse.builder()
-                                .error("Invalid media token")
-                                .build();
-                    }
+        if (isBlank(facebookResponse.getId())) {
+            // not valid token should stop
+            log.error("Login:facebookError");
+            return DefaultResponse.builder()
+                    .error("Invalid media token")
+                    .build();
+        }
 
-                    if (isEmpty(user.getId())) {
-                        // first time user has used this, save it
-                        log.info("Login:user - new user will be saved");
-                        user.setEmail(facebookResponse.getEmail());
-                        user.setInitials(facebookResponse.getInitials());
-                        user.setMediaId(facebookResponse.getId());
-                        user.setName(facebookResponse.getName());
-                        user.setMediaType("facebook");
+        User user = userService.getUserByMediaId(form.getMediaId());
+        if (isEmpty(user.getId())) {
+            // first time user has used this, save it
+            log.info("Login:user - new user will be saved");
+            user.setEmail(facebookResponse.getEmail());
+            user.setInitials(facebookResponse.getInitials());
+            user.setMediaId(facebookResponse.getId());
+            user.setName(facebookResponse.getName());
+            user.setMediaType("facebook");
+            user.addRole("ROLE_USER");
+            user.setPassword("no_password");
 
-                        userService.save(user).subscribe();
+            userService.save(user);
 
-                    // user exists and need to match the mediaId with facebookId
-                    } else if (!user.getMediaId().equals(facebookResponse.getId())) {
-                        log.error("Login:facebookError");
-                        return DefaultResponse.builder()
-                                .error("Invalid media id")
-                                .build();
-                    }
+        // user exists and need to match the mediaId with facebookId
+        } else if (!user.getMediaId().equals(facebookResponse.getId())) {
+            log.error("Login:facebookError");
+            return DefaultResponse.builder()
+                    .error("Invalid media id")
+                    .build();
+        }
 
-                    // generate token
-                    String token = tokenService.createToken(user);
+        // generate token
+        String token = tokenService.createToken(user);
+        tokenService.addCookie(response, user);
 
-                    return DefaultResponse.builder()
-                            .success(true)
-                            .data(UserLoginResponse.builder()
-                                    .facebook(facebookResponse)
-                                    .token(token)
-                                    .build())
-                            .build();
-                });
+        return DefaultResponse.builder()
+                .success(true)
+                .data(UserLoginResponse.builder()
+                        .facebook(facebookResponse)
+                        .token(token)
+                        .build())
+                .build();
     }
 
     public String hasErrors(String userId, String providerId) {
@@ -101,51 +100,51 @@ public class RecommendationService {
         return isEmpty(error) ? null : "Error: " + error;
     }
 
-    public Flux<Provider> getRecommendations(RecommendationFindForm form) {
-        return providerService.getAll()
-            .filter(provider -> {
-                if (provider.getRecommendations() != null) {
-                    return provider.getRecommendations().stream().anyMatch(recommendation -> form.getUserIds().contains(recommendation.getUserId()));
-                }
-                return false;
-            })
-            .sort(Comparator.comparingInt(Provider::getScoreAvg));
+    public List<Provider> getRecommendations(RecommendationFindForm form) {
+        return providerService.getProviderByUserRecommendation(form.getUserIds());
     }
 
-    public Flux<Provider> getRecommendations() {
+    public List<Provider> getRecommendations() {
         return providerService.getAllOrderByScore();
     }
 
-    public Mono<DefaultResponse> addRecommendation (RecommendationForm form) {
+    public DefaultResponse addRecommendation (RecommendationForm form) {
         log.info("addRecommendation: " + form.toString());
-        return Mono.zip(userService.getUserByMediaId(form.getUserId()), providerService.getProviderById(form.getProviderId()))
-                .map(objects -> {
-                    User user = objects.getT1();
-                    Provider provider = objects.getT2();
-                    String errors = hasErrors(user.getId(), provider.getId());
-                    log.info("addRecommendation: errors: " + errors);
+        User user = userService.getUserByMediaId(form.getUserId());
+        if (user == null) {
+            return DefaultResponse.builder()
+                    .error("Error: user not exists")
+                    .build();
+        }
+        Provider provider = providerService.getProviderById(form.getProviderId());
+        if (provider == null) {
+            return DefaultResponse.builder()
+                    .error("Error: provider not exists")
+                    .build();
+        }
+        String errors = hasErrors(user.getId(), provider.getId());
+        log.info("addRecommendation: errors: " + errors);
 
-                    if (errors == null) {
-                        Recommendation recommendation = form.buildRecommendation();
+        if (errors == null) {
+            Recommendation recommendation = form.buildRecommendation();
 
-                        user.addRecommendation(recommendation);
-                        userService.save(user).subscribe();
-                        log.info("addRecommendation: user: success");
+            user.addRecommendation(recommendation);
+            userService.save(user);
+            log.info("addRecommendation: user: success");
 
-                        provider.addRecommendation(recommendation);
+            provider.addRecommendation(recommendation);
 
-                        providerService.save(provider).subscribe();
-                        log.info("addRecommendation: provider: success");
+            providerService.save(provider);
+            log.info("addRecommendation: provider: success");
 
-                        return DefaultResponse.builder()
-                                .success(true)
-                                .data(recommendation)
-                                .build();
-                    }
-                    return DefaultResponse.builder()
-                            .error(errors)
-                            .build();
-                });
+            return DefaultResponse.builder()
+                    .success(true)
+                    .data(recommendation)
+                    .build();
+        }
+        return DefaultResponse.builder()
+                .error(errors)
+                .build();
     }
 
     public User buildUser(int i) {
@@ -154,6 +153,20 @@ public class RecommendationService {
                 .name("User test"+ i)
                 .mediaId("user_"+i)
                 .mediaType("test")
+                .password("user_"+i)
+                .initials("U "+i)
+                .roles(List.of("ROLE_USER"))
+                .build();
+    }
+    public User buildAdmin() {
+        return User.builder()
+                .email("admin@admin.com")
+                .name("Admin test")
+                .mediaId("admin")
+                .mediaType("admin")
+                .password("admin")
+                .initials("AD")
+                .roles(List.of("ROLE_USER", "ROLE_ADMIN"))
                 .build();
     }
 
@@ -177,23 +190,24 @@ public class RecommendationService {
     @PostConstruct
     public void initDb() {
         log.info("init db");
-        long userCount = userService.count().block();
+        long userCount = userService.count();
         log.info("init db: users:" + userCount);
         if (userCount == 0) {
-            userService.save(buildUser(1)).subscribe();
-            userService.save(buildUser(2)).subscribe();
-            userService.save(buildUser(3)).subscribe();
-            userService.save(buildUser(4)).subscribe();
-            userService.save(buildUser(5)).subscribe();
+            userService.save(buildAdmin());
+            userService.save(buildUser(1));
+            userService.save(buildUser(2));
+            userService.save(buildUser(3));
+            userService.save(buildUser(4));
+            userService.save(buildUser(5));
         }
-        long providerCount = providerService.count().block();
+        long providerCount = providerService.count();
         log.info("init db: providers:" + providerCount);
         if (providerCount == 0) {
-            providerService.save(buildProvider(1)).subscribe();
-            providerService.save(buildProvider(2)).subscribe();
-            providerService.save(buildProvider(3)).subscribe();
-            providerService.save(buildProvider(4)).subscribe();
-            providerService.save(buildProvider(5)).subscribe();
+            providerService.save(buildProvider(1));
+            providerService.save(buildProvider(2));
+            providerService.save(buildProvider(3));
+            providerService.save(buildProvider(4));
+            providerService.save(buildProvider(5));
         }
     }
 }
