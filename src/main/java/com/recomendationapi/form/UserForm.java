@@ -10,6 +10,7 @@ import java.util.List;
 @ToString
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserForm extends DefaultForm {
@@ -36,7 +37,7 @@ public class UserForm extends DefaultForm {
     public User convertToEntity() {
         return User.builder()
                 .id(id)
-                .name(name != null ? name.replaceAll("\\s+","").toUpperCase() : "")
+                .name(name != null ? name.replaceAll("\\s+"," ").trim().toUpperCase() : "")
                 .email(email)
                 .mediaType(mediaType)
                 .mediaId(mediaId)

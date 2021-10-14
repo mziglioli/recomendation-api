@@ -1,6 +1,7 @@
 package com.recomendationapi.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.recomendationapi.form.DefaultForm;
 import com.recomendationapi.form.UserForm;
 import lombok.*;

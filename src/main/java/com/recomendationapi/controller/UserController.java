@@ -19,6 +19,6 @@ public class UserController extends DefaultController<UserService, User, UserFor
 
   @Autowired
   public UserController(UserService service) {
-    super(service);
+    super(service, service);
   }
 }

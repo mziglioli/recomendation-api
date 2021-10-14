@@ -19,8 +19,9 @@ public class RecommendationFindForm extends DefaultForm {
     private List<String> userIds;
     @Min(value = 0, message = "validator.invalid.page")
     @Max(value = 100, message = "validator.invalid.page")
-    private int page = 0;
+    private int page;
     @Min(value = 5, message = "validator.invalid.size")
     @Max(value = 100, message = "validator.invalid.size")
+    @Builder.Default
     private int size = 10;
 }

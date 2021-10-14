@@ -1,11 +1,10 @@
 package com.recomendationapi.service;
 
-import com.recomendationapi.form.ProviderForm;
 import com.recomendationapi.model.Provider;
-import com.recomendationapi.model.User;
 import com.recomendationapi.repository.ProviderRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,12 +18,9 @@ import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 @Service
 public class ProviderService extends DefaultService<Provider, ProviderRepository> {
 
-    private UserService userService;
-
     @Autowired
-    public ProviderService(UserService userService, ProviderRepository repository) {
+    public ProviderService(ProviderRepository repository) {
         super(repository);
-        this.userService = userService;
     }
 
     public Provider getProviderById(String id) {
@@ -32,30 +28,21 @@ public class ProviderService extends DefaultService<Provider, ProviderRepository
     }
 
     public Provider getProvider(String name) {
-        return repository.findProviderByNameIsLike(name).orElse(new Provider());
+        return repository.findProviderByName(name).orElse(new Provider());
     }
 
-    public List<Provider> getAllOrderByScore(int page, int size) {
+    public Page<Provider> getAllByNameLike(String name, int page, int size) {
+        return repository.findProvidersByActiveAndNameIsLikeOrderByScoreAvgDesc(true, name, PageRequest.of(page, size));
+    }
+
+    public Page<Provider> getAllOrderByScore(String name, int page, int size) {
+        if (isNotEmpty(name)) {
+            return getAllByNameLike(name, page, size);
+        }
         return repository.findProvidersByActiveOrderByScoreAvgDesc(true, PageRequest.of(page, size));
     }
 
-    public List<Provider> getProviderByUserRecommendation(List<String> userIds, int page, int size) {
-        return repository.findProvidersByRecommendationsUserIdsOrderByScoreAvgDesc(userIds, PageRequest.of(page, size));
-    }
-
-    public Provider add(ProviderForm form) {
-        log.info("add:provider: start form:" + form.toString());
-        Provider entity = form.convertToEntity();
-        log.info("add:provider: start entity:" + entity.toString());
-
-        User user = userService.getUserByMediaId(form.getUserId());
-        if (isNotEmpty(user.getId())) {
-            Provider provider = getProvider(entity.getName());
-            log.info("add:provider: pending =" + user.toString() + "; " + provider.toString());
-            return validateAndSaveEntity(entity, provider);
-        } else {
-            throw new RuntimeException("User do NOT exists, get out :)");
-        }
-
+    public Page<Provider> getProviderByUserRecommendation(List<String> userIds, int page, int size) {
+        return repository.findProvidersByActiveAndRecommendationsUserIdsOrderByScoreAvgDesc(true, userIds, PageRequest.of(page, size));
     }
 }

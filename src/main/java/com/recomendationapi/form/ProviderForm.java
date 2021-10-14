@@ -31,7 +31,7 @@ public class ProviderForm extends DefaultForm {
     @Override
     public Provider convertToEntity() {
         return Provider.builder()
-                .name(name != null ? name.replaceAll("\\s+","").toUpperCase() : "")
+                .name(name != null ? name.replaceAll("\\s+"," ").trim().toUpperCase() : "")
                 .email(email)
                 .address(address)
                 .city(city)

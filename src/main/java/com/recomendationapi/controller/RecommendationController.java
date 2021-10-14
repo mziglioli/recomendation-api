@@ -7,6 +7,7 @@ import com.recomendationapi.response.DefaultResponse;
 import com.recomendationapi.service.RecommendationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindException;
@@ -36,17 +37,9 @@ public class RecommendationController {
 
   @GetMapping("/all")
   @ResponseStatus(HttpStatus.OK)
-  public List<Provider> all(@RequestParam(required = false) String page, @RequestParam(required = false) String size) {
-    log.info(LOG_REQUEST, "all");
-    int s = 100;
-    int p = 0;
-    if (isNumeric(page)) {
-      p = Integer.parseInt(page);
-    }
-    if (isNumeric(size)) {
-      s = Integer.parseInt(size);
-    }
-    return service.getRecommendations(p, s);
+  public Page<Provider> all(@RequestParam(required = false) String name, @RequestParam(required = false) String page, @RequestParam(required = false) String size) {
+    log.info(LOG_REQUEST, "all", page + ":" + size);
+    return service.getRecommendations(name, page, size);
   }
 
   @PostMapping("/")
@@ -61,11 +54,21 @@ public class RecommendationController {
 
   @PostMapping("/friends")
   @ResponseStatus(HttpStatus.OK)
-  public List<Provider> friends(@Valid @RequestBody RecommendationFindForm form, BindingResult bindingResult) throws BindException {
+  public Page<Provider> friends(@Valid @RequestBody RecommendationFindForm form, BindingResult bindingResult) throws BindException {
     log.info(LOG_REQUEST, "add", form);
     if(bindingResult.hasErrors()){
       throw new BindException(bindingResult);
     }
     return service.getRecommendations(form);
+  }
+
+  // TODO remove this
+  @GetMapping("/init")
+  @ResponseStatus(HttpStatus.OK)
+  public DefaultResponse init() {
+    service.initDb();
+    return DefaultResponse.builder()
+            .success(true)
+            .build();
   }
 }

@@ -2,18 +2,22 @@ package com.recomendationapi;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.recomendationapi.config.security.UserAuthentication;
 import com.recomendationapi.form.ProviderForm;
 import com.recomendationapi.form.RecommendationForm;
+import com.recomendationapi.form.UserForm;
 import com.recomendationapi.model.Provider;
 import com.recomendationapi.model.User;
 import com.recomendationapi.response.FacebookResponse;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.ResourceUtils;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -30,12 +34,25 @@ public class TestUtils {
     public static ObjectMapper mapper = new ObjectMapper();
 
     public static User buildUserValid() {
-        return User.builder()
+        User user = User.builder()
                 .mediaId(USER_MEDIA_ID_VALID)
                 .mediaType("Facebook")
                 .email(USER_EMAIL)
                 .name("test")
                 .id("123")
+                .build();
+        user.setActive(true);
+        return user;
+    }
+    public static User buildAdmin() {
+        return User.builder()
+                .id("1")
+                .password("admin")
+                .initials("AD")
+                .mediaType("admin")
+                .mediaId("admin")
+                .email("admin@admin.com")
+                .roles(List.of("ROLE_ADMIN", "ROLE_USER"))
                 .build();
     }
     public static User buildUserInvalid() {
@@ -58,6 +75,16 @@ public class TestUtils {
                 .name(PROVIDER_NAME_VALID)
                 .userId(USER_MEDIA_ID_VALID)
                 .email("provider@test.com")
+                .build();
+    }
+    public static UserForm buildUserFormValid() {
+        return UserForm.builder()
+                .mediaId(USER_MEDIA_ID_VALID)
+                .mediaType("Facebook")
+                .email(USER_EMAIL)
+                .name("test test")
+                .initials("TT")
+                .password("pass")
                 .build();
     }
 
@@ -101,6 +128,14 @@ public class TestUtils {
     }
     public static void addGetStub400(WireMockServer wireMockServer, String uri, String json) {
         addGetStub(wireMockServer, uri, json, 400);
+    }
+
+    public static void addUserIntoSecurityContext(User user) {
+        UserAuthentication auth = new UserAuthentication(user);
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+    public static void addUserIntoSecurityContext() {
+        addUserIntoSecurityContext(buildUserValid());
     }
 
 }

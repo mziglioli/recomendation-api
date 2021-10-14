@@ -32,8 +32,8 @@ public class UserAuthentication implements Authentication {
 	}
 
 	@Override
-	public String getPrincipal() {
-		return user.getMediaId();
+	public User getPrincipal() {
+		return user;
 	}
 
 	@Override

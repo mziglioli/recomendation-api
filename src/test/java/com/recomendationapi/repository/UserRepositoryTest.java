@@ -19,7 +19,7 @@ public class UserRepositoryTest {
     @Autowired
     UserRepository repository;
 
-    @Test()
+    @Test
     @DisplayName("should find the user by mediaId")
     public void testValid() {
         User dbUser = repository.findUserByMediaId(USER_MEDIA_ID_VALID).orElse(null);
@@ -34,7 +34,7 @@ public class UserRepositoryTest {
         assertEquals(USER_MEDIA_ID_VALID, dbUser.getMediaId());
     }
 
-    @Test()
+    @Test
     @DisplayName("should find the user by mediaId updated")
     public void testValidUpdated() {
         User user = buildUserValid();
@@ -43,17 +43,16 @@ public class UserRepositoryTest {
         User dbUser = repository.findUserByMediaId(USER_MEDIA_ID_VALID).orElse(null);
         assertNotNull(dbUser);
         assertEquals(USER_MEDIA_ID_VALID, dbUser.getMediaId());
-        assertFalse(dbUser.isActive());
+        assertTrue(dbUser.isActive());
 
-        dbUser.setActive(true);
-        repository.save(user);
+        repository.delete(user);
 
         assertNotNull(dbUser);
         assertEquals(USER_MEDIA_ID_VALID, dbUser.getMediaId());
         assertTrue(dbUser.isActive());
     }
 
-    @Test()
+    @Test
     @DisplayName("should NOT find the user by mediaId when user do not exists")
     public void testInvalid() {
         User user = buildUserValid();

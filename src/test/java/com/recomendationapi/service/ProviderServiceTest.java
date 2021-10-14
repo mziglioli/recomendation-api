@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
-import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
@@ -42,9 +41,9 @@ class ProviderServiceTest {
   }
 
   private void mock() {
-    given(repository.findProviderByNameIsLike(PROVIDER_NAME_VALID))
+    given(repository.findProviderByName(PROVIDER_NAME_VALID))
           .willReturn(Optional.of(buildProviderValid()));
-    given(repository.findProviderByNameIsLike("any"))
+    given(repository.findProviderByName("any"))
             .willReturn(Optional.empty());
   }
 }

@@ -1,5 +1,6 @@
 package com.recomendationapi.config;
 
+import com.recomendationapi.exception.EntityNotFoundException;
 import com.recomendationapi.response.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
@@ -44,6 +45,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return handle(request, webRequest, ex, HttpStatus.FORBIDDEN);
     }
 
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity handleEntityNotFoundException(HttpServletRequest request, WebRequest webRequest, EntityNotFoundException ex) {
+        log.info("aqui:EntityNotFoundException");
+        return handle(request, webRequest, ex, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity handleAccessDenied(HttpServletRequest request, WebRequest webRequest, Exception ex) {
         log.info("aqui:handleAccessDenied");
@@ -51,7 +58,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected ResponseEntity<Object> handleBindException(BindException ex, HttpHeaders headers, HttpStatus status, WebRequest webRequest) {
+    protected ResponseEntity handleBindException(BindException ex, HttpHeaders headers, HttpStatus status, WebRequest webRequest) {
         log.info("aqui:handleBindException");
         HttpServletRequest request = ((ServletWebRequest) webRequest).getRequest();
         return handle(request, webRequest, ex, HttpStatus.BAD_REQUEST);

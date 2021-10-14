@@ -13,6 +13,7 @@ import com.recomendationapi.response.UserLoginResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,7 +67,7 @@ public class RecommendationService {
             user.addRole("ROLE_USER");
             user.setPassword("no_password");
 
-            userService.save(user);
+            userService.save(user, "0");
 
         // user exists and need to match the mediaId with facebookId
         } else if (!user.getMediaId().equals(facebookResponse.getId())) {
@@ -89,12 +90,20 @@ public class RecommendationService {
                 .build();
     }
 
-    public List<Provider> getRecommendations(RecommendationFindForm form) {
+    public Page<Provider> getRecommendations(RecommendationFindForm form) {
         return providerService.getProviderByUserRecommendation(form.getUserIds(), form.getPage(), form.getSize());
     }
 
-    public List<Provider> getRecommendations(int page, int size) {
-        return providerService.getAllOrderByScore(page, size);
+    public Page<Provider> getRecommendations(String name, String page, String size) {
+        int s = 100;
+        int p = 0;
+        if (isNumeric(page)) {
+            p = Integer.parseInt(page);
+        }
+        if (isNumeric(size)) {
+            s = Integer.parseInt(size);
+        }
+        return providerService.getAllOrderByScore(name, p, s);
     }
 
     public DefaultResponse addRecommendation (RecommendationForm form) {
@@ -120,11 +129,11 @@ public class RecommendationService {
         }
         Recommendation recommendation = form.buildRecommendation();
         user.addRecommendation(recommendation);
-        userService.save(user);
+        userService.save(user, user.getMediaId());
         log.info("addRecommendation: user: success");
 
         provider.addRecommendation(recommendation);
-        providerService.save(provider);
+        providerService.save(provider, user.getMediaId());
         log.info("addRecommendation: provider: success");
 
         return DefaultResponse.builder()
@@ -132,7 +141,6 @@ public class RecommendationService {
                 .data(recommendation)
                 .build();
     }
-
 
     public User buildUser(int i) {
         return User.builder()
@@ -145,18 +153,6 @@ public class RecommendationService {
                 .roles(List.of("ROLE_USER"))
                 .build();
     }
-    public User buildAdmin() {
-        return User.builder()
-                .email("admin@admin.com")
-                .name("Admin test")
-                .mediaId("admin")
-                .mediaType("admin")
-                .password("admin")
-                .initials("AD")
-                .roles(List.of("ROLE_USER", "ROLE_ADMIN"))
-                .build();
-    }
-
     public Provider buildProvider(int i) {
         return Provider.builder()
                 .email(i + "provider@test.com")
@@ -165,36 +161,25 @@ public class RecommendationService {
                 .build();
     }
 
-    public RecommendationForm buildForm(int i, String providerId) {
-        return RecommendationForm.builder()
-                .score(5)
-                .userId("user_" + i)
-                .providerId(providerId)
-                .comments("test")
-                .build();
-    }
-
-    @PostConstruct
     public void initDb() {
         log.info("init db");
         long userCount = userService.count();
         log.info("init db: users:" + userCount);
         if (userCount == 0) {
-            userService.save(buildAdmin());
-            userService.save(buildUser(1));
-            userService.save(buildUser(2));
-            userService.save(buildUser(3));
-            userService.save(buildUser(4));
-            userService.save(buildUser(5));
+            userService.save(buildUser(1), "0");
+            userService.save(buildUser(2), "0");
+            userService.save(buildUser(3), "0");
+            userService.save(buildUser(4), "0");
+            userService.save(buildUser(5), "0");
         }
         long providerCount = providerService.count();
         log.info("init db: providers:" + providerCount);
         if (providerCount == 0) {
-            providerService.save(buildProvider(1));
-            providerService.save(buildProvider(2));
-            providerService.save(buildProvider(3));
-            providerService.save(buildProvider(4));
-            providerService.save(buildProvider(5));
+            providerService.save(buildProvider(1), "0");
+            providerService.save(buildProvider(2), "0");
+            providerService.save(buildProvider(3), "0");
+            providerService.save(buildProvider(4), "0");
+            providerService.save(buildProvider(5), "0");
         }
     }
 }

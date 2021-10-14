@@ -28,7 +28,6 @@ public class FacebookClient {
       this.webClient = builder.rootUri(config.getBaseUrl())
               .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
               .setConnectTimeout(Duration.ofMillis(5000))
-//              .clientConnector(connector)
               .build();
       log.info("FacebookClient: start config client: {}", config.getBaseUrl());
   }
@@ -36,8 +35,7 @@ public class FacebookClient {
   public FacebookResponse getMe(String token) {
       log.info("FacebookClient: authenticate - {}{}{}", config.getBaseUrl(), config.getMeUrl(), token);
       try {
-          ResponseEntity<FacebookResponse> response =
-          webClient.getForEntity(config.getMeUrl() + token, FacebookResponse.class);
+          ResponseEntity<FacebookResponse> response = webClient.getForEntity(config.getMeUrl() + token, FacebookResponse.class);
           if (HttpStatus.OK.equals(response.getStatusCode())) {
               return response.getBody();
           }

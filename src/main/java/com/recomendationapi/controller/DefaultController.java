@@ -3,6 +3,7 @@ package com.recomendationapi.controller;
 import com.recomendationapi.form.DefaultForm;
 import com.recomendationapi.model.Entity;
 import com.recomendationapi.service.DefaultService;
+import com.recomendationapi.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,9 +26,11 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 @AllArgsConstructor(onConstructor = @__(@Autowired))
 public abstract class DefaultController<S extends DefaultService<E, R>, E extends Entity, F extends DefaultForm, R extends MongoRepository<E, String>> {
 
-  protected final S service;
   public static final String LOG_REQUEST = "Request-{}: {}";
   public static final String LOG_REQUEST_ERROR = "Request-Error-{}: {}";
+
+  protected final S service;
+  protected final UserService userService;
 
   @PostMapping("/")
   @ResponseStatus(HttpStatus.OK)
@@ -36,7 +39,7 @@ public abstract class DefaultController<S extends DefaultService<E, R>, E extend
     if(bindingResult.hasErrors()){
       throw new BindException(bindingResult);
     }
-    return service.save(form);
+    return service.save(form, userService.getAuthenticatedUserId());
   }
 
   @DeleteMapping("/{id}")
@@ -46,12 +49,11 @@ public abstract class DefaultController<S extends DefaultService<E, R>, E extend
     if(isBlank(id)) {
       throw new RuntimeException("Invalid id to disable");
     }
-    return service.delete(id);
+    return service.delete(id, userService.getAuthenticatedUserId());
   }
 
   @PutMapping("/{id}")
   @ResponseStatus(HttpStatus.OK)
-
   public E update(@PathVariable String id, @Valid @RequestBody F form, BindingResult bindingResult) throws BindException {
     log.info(LOG_REQUEST, "update", id);
     if(isBlank(id) || isBlank(form.getId()) || !id.equals(form.getId())) {
@@ -60,13 +62,19 @@ public abstract class DefaultController<S extends DefaultService<E, R>, E extend
     if(bindingResult.hasErrors()){
       throw new BindException(bindingResult);
     }
-    return service.update(id, form);
+    return service.update(id, form, userService.getAuthenticatedUserId());
   }
 
   @GetMapping("/{id}")
   public E findById(@PathVariable String id) {
     log.info(LOG_REQUEST, "find:", id);
     return service.getById(id);
+  }
+
+  @GetMapping("/active/{id}")
+  public E activeById(@PathVariable String id) {
+    log.info(LOG_REQUEST, "active:", id);
+    return service.activeById(id, userService.getAuthenticatedUserId());
   }
 
   @GetMapping("/all")
