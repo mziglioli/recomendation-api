@@ -13,13 +13,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-
 import javax.validation.Valid;
 
-import java.util.List;
-
 import static com.recomendationapi.controller.DefaultController.LOG_REQUEST;
-import static org.apache.commons.lang3.StringUtils.isNumeric;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @Slf4j
@@ -37,8 +33,9 @@ public class RecommendationController {
 
   @GetMapping("/all")
   @ResponseStatus(HttpStatus.OK)
-  public Page<Provider> all(@RequestParam(required = false) String name, @RequestParam(required = false) String page, @RequestParam(required = false) String size) {
+  public DefaultResponse all(@RequestParam(required = false) String name, @RequestParam(required = false) String page, @RequestParam(required = false) String size) {
     log.info(LOG_REQUEST, "all", page + ":" + size);
+
     return service.getRecommendations(name, page, size);
   }
 
@@ -60,15 +57,5 @@ public class RecommendationController {
       throw new BindException(bindingResult);
     }
     return service.getRecommendations(form);
-  }
-
-  // TODO remove this
-  @GetMapping("/init")
-  @ResponseStatus(HttpStatus.OK)
-  public DefaultResponse init() {
-    service.initDb();
-    return DefaultResponse.builder()
-            .success(true)
-            .build();
   }
 }

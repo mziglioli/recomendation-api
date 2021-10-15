@@ -1,5 +1,6 @@
 package com.recomendationapi.service;
 
+import com.recomendationapi.exception.EntityNotFoundException;
 import com.recomendationapi.form.RecommendationForm;
 import com.recomendationapi.model.Provider;
 import com.recomendationapi.model.User;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 
 import static com.recomendationapi.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -67,11 +69,10 @@ class RecommendationServiceTest {
 
     RecommendationForm form = buildRecommendationForm(providerDb.getId());
     form.setUserId("any_wrong_id");
-
-    DefaultResponse response = service.addRecommendation(form);
-    assertNotNull(response);
-    assertFalse(response.isSuccess());
-    assertEquals("Error: user do not match logged user", response.getError());
+    Exception exception = assertThrows(AuthenticationCredentialsNotFoundException.class, () -> {
+      service.addRecommendation(form);
+    });
+    assertEquals("Error: user do not match logged user", exception.getMessage());
   }
 
   @Test
@@ -85,10 +86,10 @@ class RecommendationServiceTest {
 
     RecommendationForm form = buildRecommendationForm("any_provider_id");
 
-    DefaultResponse response = service.addRecommendation(form);
-    assertNotNull(response);
-    assertFalse(response.isSuccess());
-    assertEquals("Error: provider not exists", response.getError());
+    Exception exception = assertThrows(EntityNotFoundException.class, () -> {
+      service.addRecommendation(form);
+    });
+    assertEquals("Error: provider not exists", exception.getMessage());
   }
 
   @Test
@@ -101,11 +102,10 @@ class RecommendationServiceTest {
     providerService.save(provider, "0");
 
     RecommendationForm form = buildRecommendationForm("any_provider_id");
-
-    DefaultResponse response = service.addRecommendation(form);
-    assertNotNull(response);
-    assertFalse(response.isSuccess());
-    assertEquals("Error: provider not exists", response.getError());
+    Exception exception = assertThrows(EntityNotFoundException.class, () -> {
+      service.addRecommendation(form);
+    });
+    assertEquals("Error: provider not exists", exception.getMessage());
   }
 
 }

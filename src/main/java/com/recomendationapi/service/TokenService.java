@@ -47,6 +47,7 @@ public class TokenService {
 
   public User getUserFromCookie(HttpServletRequest request) {
     Cookie cookie = WebUtils.getCookie(request, COOKIE_AUTH_NAME);
+    log.info("getUserFromCookie:cookie: {}", cookie);
     if (cookie != null) {
       String token = cookie.getValue();
       log.info("getUserFromCookie:success: {}", token);

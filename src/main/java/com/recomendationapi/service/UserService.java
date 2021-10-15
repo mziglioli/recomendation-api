@@ -10,13 +10,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-
-import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 @Slf4j
@@ -65,17 +62,7 @@ public class UserService extends DefaultService<User, UserRepository> {
             return getAdmin();
         } else {
             log.info("getAuthenticatedUser: details: {}", userDetails.toString());
-            User user = getUserByMediaId(userDetails.getUsername());
-            if (user == null || isEmpty(user.getMediaId())) {
-                log.error("getAuthenticatedUser:getUserByMediaId: user null");
-                throw new UsernameNotFoundException("User not found");
-            }
-            if (!user.isActive()) {
-                log.error("getAuthenticatedUser:getUserByMediaId: user not active");
-                throw new UsernameNotFoundException("User is NOT active");
-            }
-            log.info("getAuthenticatedUser: user: {}", user.toString());
-            return user;
+            return (User) userDetails;
         }
     }
 

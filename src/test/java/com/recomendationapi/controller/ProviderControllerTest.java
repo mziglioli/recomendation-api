@@ -2,20 +2,13 @@ package com.recomendationapi.controller;
 
 import com.recomendationapi.form.ProviderForm;
 import com.recomendationapi.model.Provider;
-import com.recomendationapi.model.User;
-import com.recomendationapi.repository.UserRepository;
 import com.recomendationapi.response.ErrorResponse;
-import com.recomendationapi.service.UserService;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.List;
 

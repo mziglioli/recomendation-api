@@ -36,4 +36,14 @@ public class PublicController {
     }
     return service.login(response, form);
   }
+
+  // TODO remove this
+  @GetMapping("/init")
+  @ResponseStatus(HttpStatus.OK)
+  public DefaultResponse init() {
+    service.initDb();
+    return DefaultResponse.builder()
+            .success(true)
+            .build();
+  }
 }

@@ -1,6 +1,7 @@
 package com.recomendationapi.service;
 
 import com.recomendationapi.client.FacebookClient;
+import com.recomendationapi.exception.EntityNotFoundException;
 import com.recomendationapi.form.LoginForm;
 import com.recomendationapi.form.RecommendationFindForm;
 import com.recomendationapi.form.RecommendationForm;
@@ -14,10 +15,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
@@ -94,7 +95,7 @@ public class RecommendationService {
         return providerService.getProviderByUserRecommendation(form.getUserIds(), form.getPage(), form.getSize());
     }
 
-    public Page<Provider> getRecommendations(String name, String page, String size) {
+    public DefaultResponse getRecommendations(String name, String page, String size) {
         int s = 100;
         int p = 0;
         if (isNumeric(page)) {
@@ -103,30 +104,35 @@ public class RecommendationService {
         if (isNumeric(size)) {
             s = Integer.parseInt(size);
         }
-        return providerService.getAllOrderByScore(name, p, s);
+        Page<Provider> response = providerService.getAllOrderByScore(name, p, s);
+        return DefaultResponse.builder()
+                .success(true)
+                .data(response)
+                .build();
     }
 
     public DefaultResponse addRecommendation (RecommendationForm form) {
-        User user = userService.getAuthenticatedUser();
-        if (user == null || isEmpty(user.getId())) {
-            return DefaultResponse.builder()
-                    .error("Error: user not exists")
-                    .build();
+        User authUser = userService.getAuthenticatedUser();
+        if (authUser == null || isEmpty(authUser.getId())) {
+            throw new AccessDeniedException("Error: user not logged in");
         }
 
         // validate the form
-        if (!StringUtils.equals(user.getMediaId(), form.getUserId())) {
-            return DefaultResponse.builder()
-                    .error("Error: user do not match logged user")
-                    .build();
+        if (!StringUtils.equals(authUser.getMediaId(), form.getUserId())) {
+            throw new AuthenticationCredentialsNotFoundException("Error: user do not match logged user");
+        }
+
+        User user = userService.getUserByMediaId(authUser.getMediaId());
+        // validate the user is in db
+        if (isEmpty(user.getId())) {
+            throw new AuthenticationCredentialsNotFoundException("Error: user not exists");
         }
 
         Provider provider = providerService.getProviderById(form.getProviderId());
         if (provider == null || isEmpty(provider.getId())) {
-            return DefaultResponse.builder()
-                    .error("Error: provider not exists")
-                    .build();
+            throw new EntityNotFoundException("Error: provider not exists");
         }
+
         Recommendation recommendation = form.buildRecommendation();
         user.addRecommendation(recommendation);
         userService.save(user, user.getMediaId());
@@ -166,6 +172,16 @@ public class RecommendationService {
         long userCount = userService.count();
         log.info("init db: users:" + userCount);
         if (userCount == 0) {
+            User user = User.builder()
+                    .mediaId("123_Face")
+                    .mediaType("Facebook")
+                    .email("test@test.com")
+                    .name("test")
+                    .roles(List.of("ROLE_USER"))
+                    .password("admin")
+                    .initials("AD")
+                    .build();
+            userService.save(user, "0");
             userService.save(buildUser(1), "0");
             userService.save(buildUser(2), "0");
             userService.save(buildUser(3), "0");

@@ -15,7 +15,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.ResourceUtils;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
 
@@ -28,7 +27,10 @@ public class TestUtils {
     public final static String USER_EMAIL = "test@test.com";
     public final static String USER_MEDIA_ID_VALID = "123_Face";
     public final static String USER_MEDIA_ID_INVALID = "0000000";
+    public final static String PROVIDER_ID_VALID = "123_Provider";
+    public final static String PROVIDER_ID_INVALID = "000_Provider";
     public final static String PROVIDER_NAME_VALID = "Test Provider";
+    public final static String PROVIDER_NAME_INVALID = "Invalid Provider";
     public final static String URI_ME = "/me?fields=id,email,friends,last_name,first_name&format=json&method=get&pretty=0&transport=cors&access_token=";
 
     public static ObjectMapper mapper = new ObjectMapper();
@@ -39,6 +41,7 @@ public class TestUtils {
                 .mediaType("Facebook")
                 .email(USER_EMAIL)
                 .name("test")
+                .roles(List.of("ROLE_USER"))
                 .id("123")
                 .build();
         user.setActive(true);
@@ -64,6 +67,7 @@ public class TestUtils {
                 .phone("01234567")
                 .name(PROVIDER_NAME_VALID)
                 .email("provider@test.com")
+                .id(PROVIDER_ID_VALID)
                 .build();
     }
     public static ProviderForm buildProviderFormValid() {
@@ -103,7 +107,7 @@ public class TestUtils {
         return Files.readString(file.toPath());
     }
 
-    public static Object getObjectFromFile(String filePath, Class clazz) throws Exception {
+    public static Object getObjectFromFile(String filePath, Class<?> clazz) throws Exception {
         String json = getJsonFromFile(filePath);
         return mapper.readValue(json, clazz);
     }
